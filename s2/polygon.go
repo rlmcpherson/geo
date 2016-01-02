@@ -91,3 +91,13 @@ func (p *Polygon) IsFull() bool {
 func (p *Polygon) Loops() []*Loop {
 	return p.loops
 }
+
+func (p *Polygon) ContainsPoint(pt Point) bool {
+	for _, l := range p.loops {
+		if l.ContainsPoint(pt) {
+			return true
+		}
+		// TODO: hole check
+	}
+	return false
+}
