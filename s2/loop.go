@@ -153,4 +153,14 @@ func (l Loop) Vertices() []Point {
 	return l.vertices
 }
 
+// ContainsPoint reports whether this loop contains the given point
+func (l Loop) ContainsPoint(p Point) bool {
+	for _, v := range l.vertices {
+		if SimpleCrossing(OriginPoint(), p, l.vertices[0], v) {
+			return true
+		}
+	}
+	return false
+}
+
 // BUG(): The major differences from the C++ version is pretty much everything.
