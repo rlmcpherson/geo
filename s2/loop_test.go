@@ -162,3 +162,53 @@ func TestEmptyFullLoops(t *testing.T) {
 	}
 
 }
+
+func TestLoopContainsPoint(t *testing.T) {
+
+	tests := []struct {
+		l    *Loop
+		p    Point
+		want bool
+	}{
+		{antarctic80,
+			PointFromLatLng(LatLng{southPoleLat, 0}),
+			true,
+		},
+		{southHemi,
+			PointFromLatLng(LatLng{southPoleLat, 0}),
+			true,
+		},
+		{antarctic80,
+			PointFromLatLng(LatLng{northPoleLat, 0}),
+			false,
+		},
+		{northHemi,
+			PointFromLatLng(LatLng{southPoleLat, 0}),
+			false,
+		},
+		{
+			arctic80,
+			PointFromLatLng(LatLng{northPoleLat, 0}),
+			true,
+		},
+		{
+			loopB,
+			PointFromLatLng(LatLng{0, 180}),
+			true,
+		},
+	}
+
+	for i, test := range tests {
+		// sanity check
+		vertices := test.l.Vertices()
+		direction := RobustSign(vertices[0], vertices[1], vertices[2])
+		if direction == Clockwise {
+			t.Errorf("%d: %v not CCW", i, test.l)
+		}
+		if got := test.l.ContainsPoint(test.p); got != test.want {
+			t.Errorf("%d: loop %#v ContainsPoint(%#v), got %v want %v", i, test.l, test.p, got, test.want)
+		}
+
+	}
+
+}

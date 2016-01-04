@@ -155,7 +155,7 @@ func (l Loop) Vertices() []Point {
 
 // ContainsPoint reports whether this loop contains the given point
 func (l Loop) ContainsPoint(p Point) bool {
-	for _, v := range l.vertices {
+	for _, v := range l.vertices[1:] {
 		if SimpleCrossing(OriginPoint(), p, l.vertices[0], v) {
 			return true
 		}
