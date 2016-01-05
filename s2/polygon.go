@@ -92,6 +92,7 @@ func (p *Polygon) Loops() []*Loop {
 	return p.loops
 }
 
+// ContainsPoint reports whether this polygon contains the given point
 func (p *Polygon) ContainsPoint(pt Point) bool {
 	for _, l := range p.loops {
 		if l.ContainsPoint(pt) {
@@ -99,5 +100,27 @@ func (p *Polygon) ContainsPoint(pt Point) bool {
 		}
 		// TODO: hole check
 	}
+	return false
+}
+
+func (p *Polygon) CapBound() Cap {
+	return p.RectBound().CapBound()
+}
+
+func (p *Polygon) RectBound() Rect {
+	bound := EmptyRect()
+	for _, l := range p.loops {
+		bound = bound.Union(l.RectBound())
+	}
+	return bound
+}
+
+func (p *Polygon) ContainsCell() bool {
+	// TODO: implement for region interface
+	return false
+}
+
+func (p *Polygon) IntersectsCell() bool {
+	// TODO: implement for region interface
 	return false
 }
