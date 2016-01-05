@@ -141,3 +141,38 @@ func VertexCrossing(a, b, c, d Point) bool {
 		panic("VertexCrossing called with 4 distinct vertices")
 	}
 }
+
+// Like SimpleCrossing, except that points that lie exactly on a line are
+// arbitrarily classified as being on one side or the other (according to
+// the rules of RobustSign().  It returns CounterClockwise if there is a crossing, CounterClockwise
+// if there is no crossing, and Indeterminate if any two vertices from different edges
+// are the same.  Returns Indeterminate or Clockwise if either edge is degenerate.
+// Properties of RobustCrossing:
+//
+//  (1) RobustCrossing(b,a,c,d) == RobustCrossing(a,b,c,d)
+//  (2) RobustCrossing(c,d,a,b) == RobustCrossing(a,b,c,d)
+//  (3) RobustCrossing(a,b,c,d) == 0 if a==c, a==d, b==c, b==d
+//  (3) RobustCrossing(a,b,c,d) <= 0 if a==b or c==d
+func RobustCrossing(a, b, c, d Point) Direction {
+	bda := RobustSign(a, b, d)
+	acb := RobustSign(a, b, c)
+
+	if bda == -acb && bda != 0 { // Most common case -- triangles have opposite orientations.
+		return Clockwise
+	}
+	if bda&acb == 0 { // At least one value is zero -- two vertices are identical.
+		return Indeterminate
+	}
+	// ACB and BDA have the appropriate orientations, so now we check the
+	// triangles CBD and DAC.
+	cbd := RobustSign(c, d, b)
+	if cbd != acb {
+		return Clockwise
+	}
+
+	dac := RobustSign(c, d, a)
+	if dac == acb {
+		return CounterClockwise
+	}
+	return Clockwise
+}
