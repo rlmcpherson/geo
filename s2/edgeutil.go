@@ -176,3 +176,21 @@ func RobustCrossing(a, b, c, d Point) Direction {
 	}
 	return Clockwise
 }
+
+// A convenience function that calls RobustCrossing() to handle cases
+// where all four vertices are distinct, and VertexCrossing() to handle
+// cases where two or more vertices are the same.  This defines a crossing
+// function such that point-in-polygon containment tests can be implemented
+// by simply counting edge crossings.
+func EdgeOrVertexCrossing(a, b, c, d Point) bool {
+
+	direction := RobustCrossing(a, b, c, d)
+
+	if direction == CounterClockwise {
+		return true
+	}
+	if direction == Clockwise {
+		return false
+	}
+	return VertexCrossing(a, b, c, d)
+}

@@ -17,6 +17,8 @@ limitations under the License.
 package s2
 
 import (
+	"log"
+
 	"github.com/golang/geo/r3"
 )
 
@@ -155,11 +157,15 @@ func (l Loop) Vertices() []Point {
 
 // ContainsPoint reports whether this loop contains the given point
 func (l Loop) ContainsPoint(p Point) bool {
-	var inside bool
+	// TODO: return false if not in loop rect bound
+	crossings := 0
 	for _, v := range l.vertices[1:] {
-		inside = inside != SimpleCrossing(OriginPoint(), p, l.vertices[0], v)
+		if EdgeOrVertexCrossing(OriginPoint(), p, l.vertices[0], v) {
+			crossings++
+		}
 	}
-	return inside
+	log.Printf("crossings %d", crossings)
+	return crossings%2 != 0
 }
 
 // BUG(): The major differences from the C++ version is pretty much everything.
