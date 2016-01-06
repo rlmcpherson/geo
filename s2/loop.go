@@ -16,11 +16,7 @@ limitations under the License.
 
 package s2
 
-import (
-	"log"
-
-	"github.com/golang/geo/r3"
-)
+import "github.com/golang/geo/r3"
 
 // Loop represents a simple spherical polygon. It consists of a sequence
 // of vertices where the first vertex is implicitly connected to the
@@ -157,15 +153,16 @@ func (l Loop) Vertices() []Point {
 
 // ContainsPoint reports whether this loop contains the given point
 func (l Loop) ContainsPoint(p Point) bool {
-	// TODO: return false if not in loop rect bound
-	crossings := 0
-	for _, v := range l.vertices[1:] {
-		if EdgeOrVertexCrossing(OriginPoint(), p, l.vertices[0], v) {
-			crossings++
-		}
+	if !l.RectBound().ContainsLatLng(LatLngFromPoint(p)) {
+		return false
 	}
-	log.Printf("crossings %d", crossings)
-	return crossings%2 != 0
+	// TODO: return false if not in loop rect bound
+	contains := l.originInside
+	v0, origin := l.vertices[0], OriginPoint()
+	for _, v := range l.vertices[1:] {
+		contains = contains != EdgeOrVertexCrossing(origin, p, v0, v)
+	}
+	return contains
 }
 
 // BUG(): The major differences from the C++ version is pretty much everything.
