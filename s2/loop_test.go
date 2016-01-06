@@ -170,6 +170,26 @@ func TestLoopContainsPoint(t *testing.T) {
 		p    Point
 		want bool
 	}{
+		{northHemi,
+			PointFromCoords(0, 0, 1),
+			true,
+		},
+		{northHemi,
+			PointFromCoords(0, 0, -1),
+			false,
+		},
+		{southHemi,
+			PointFromCoords(0, 0, 1),
+			false,
+		},
+		{southHemi,
+			PointFromCoords(0, 0, -1),
+			true,
+		},
+		{westHemi,
+			PointFromCoords(0, -1, 0),
+			true,
+		},
 		{antarctic80,
 			PointFromLatLng(LatLng{southPoleLat, 0}),
 			true,
@@ -203,7 +223,7 @@ func TestLoopContainsPoint(t *testing.T) {
 		vertices := test.l.Vertices()
 		direction := RobustSign(vertices[0], vertices[1], vertices[2])
 		if direction == Clockwise {
-			t.Errorf("%d: %v not CCW", i, test.l)
+			t.Fatalf("%d: %v not CCW", i, test.l)
 		}
 		if got := test.l.ContainsPoint(test.p); got != test.want {
 			t.Errorf("%d: loop %#v ContainsPoint(%#v), got %v want %v", i, test.l, test.p, got, test.want)
