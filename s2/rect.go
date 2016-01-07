@@ -264,5 +264,9 @@ func (r Rect) ContainsCell(c Cell) bool {
 	return r.Contains(c.RectBound())
 }
 
+func (r Rect) ContainsPoint(p Point) bool {
+	return r.ContainsLatLng(LatLngFromPoint(p))
+}
+
 // BUG(dsymonds): The major differences from the C++ version are:
 //   - almost everything
