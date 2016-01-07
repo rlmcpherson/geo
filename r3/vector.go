@@ -101,3 +101,9 @@ func (v Vector) Ortho() Vector {
 	}
 	return v.Cross(ov).Normalize()
 }
+
+func (v Vector) Equal(other Vector) bool {
+	return v.X == other.X &&
+		v.Y == other.Y &&
+		v.Z == other.Z
+}
