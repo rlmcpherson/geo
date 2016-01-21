@@ -17,8 +17,10 @@ limitations under the License.
 package s2
 
 import (
+	"log"
 	"math"
 
+	"github.com/golang/geo/r3"
 	"github.com/golang/geo/s1"
 )
 
@@ -120,7 +122,8 @@ func InterpolateAtDistance(ax s1.Angle, a, b Point) Point {
 
 func VertexCrossing(a, b, c, d Point) bool {
 	// If A == B or C == D there is no intersection.
-	if (a == b) || c == d {
+	av, bv, cv, dv := a.Vector, b.Vector, c.Vector, d.Vector
+	if av.Equal(bv) || cv.Equal(dv) {
 		return false
 	}
 	// If any other pair of vertices is equal, there is a crossing if and only
@@ -129,17 +132,18 @@ func VertexCrossing(a, b, c, d Point) bool {
 	// arbitrary fixed reference point.
 
 	switch {
-	case (a == d):
+	case av.Equal(dv):
 		return OrderedCCW(Point{a.Ortho()}, c, b, a)
-	case b == c:
+	case bv.Equal(cv):
 		return OrderedCCW(Point{b.Ortho()}, d, a, b)
-	case a == c:
+	case av.Equal(cv):
 		return OrderedCCW(Point{a.Ortho()}, d, b, a)
-	case b == d:
+	case bv.Equal(dv):
 		return OrderedCCW(Point{b.Ortho()}, c, a, b)
 	default:
-		panic("VertexCrossing called with 4 distinct vertices")
+		log.Printf("VertexCrossing called with 4 distinct vertices")
 	}
+	return false
 }
 
 // Like SimpleCrossing, except that points that lie exactly on a line are
@@ -193,4 +197,65 @@ func EdgeOrVertexCrossing(a, b, c, d Point) bool {
 		return false
 	}
 	return VertexCrossing(a, b, c, d)
+}
+
+// RectBounder computes a bounding rectangle that contains all edges
+// defined by a vertex chain v0, v1, v2, ...  All vertices must be unit
+// length.  Note that the bounding rectangle of an edge can be larger than
+// the bounding rectangle of its endpoints, e.g. consider an edge that
+// passes through the north pole.
+
+// use NewRectBounder for creation
+type RectBounder struct {
+	bound     Rect
+	lastPoint Point
+}
+
+// NewRectBounder creates an initialized RectBounder
+func NewRectBounder() RectBounder {
+	return RectBounder{EmptyRect(), OriginPoint()}
+}
+
+// AddPoint returns increases the size of the bounding Rect to include point p
+func (r RectBounder) AddPoint(p Point) RectBounder {
+	if r.bound.IsEmpty() {
+		return RectBounder{r.bound.AddPoint(LatLngFromPoint(p)), p}
+	}
+	// We can't just call bound_.AddPoint(b_latlng) here, since we need to
+	// ensure that all the longitudes between "a" and "b" are included.
+	r.bound = r.bound.Union(RectFromLatLng(LatLngFromPoint(p)))
+	// Check whether the min/max latitude occurs in the edge interior.  We find
+	// the normal to the plane containing AB, and then a vector "dir" in this
+	// plane that also passes through the equator.  We use RobustCrossProd to
+	// ensure that the edge normal is accurate even when the two points are very
+	// close together.
+	ab := r.lastPoint.PointCross(p)
+	dir := ab.Cross(r3.Vector{0, 0, 1})
+	da := dir.Dot(r.lastPoint.Vector)
+	db := dir.Dot(p.Vector)
+
+	if da*db < 0 {
+		// Minimum/maximum latitude occurs in the edge interior.
+		absLat := math.Acos(math.Abs(ab.Vector.Y / ab.Norm()))
+
+		if da < 0 {
+			// It's possible that abs_lat < lat_.lo() due to numerical errors.
+			r.bound.Lat.Hi = math.Max(absLat, r.bound.Lat.Hi)
+		} else {
+			r.bound.Lat.Lo = math.Min(absLat, r.bound.Lat.Lo)
+		}
+		//// If the edge comes very close to the north or south pole then we may
+		//// not be certain which side of the pole it is on.  We handle this by
+		//// expanding the longitude bounds if the maximum absolute latitude is
+		//// approximately Pi/2.
+		if absLat >= math.Pi/2-1e-15 {
+			r.bound.Lng = s1.FullInterval()
+		}
+	}
+	r.lastPoint = p
+	return r
+}
+
+func (r RectBounder) Bound() Rect {
+	return r.bound
 }

@@ -178,3 +178,27 @@ func TestRepeatedInterpolation(t *testing.T) {
 		}
 	}
 }
+
+func TestVertexCrossing(t *testing.T) {
+
+	//
+	//  (1) VC(a,a,c,d) == VC(a,b,c,c) == false
+	//  (2) VC(a,b,a,b) == VC(a,b,b,a) == true
+	//  (3) VC(a,b,c,d) == VC(a,b,d,c) == VC(b,a,c,d) == VC(b,a,d,c)
+	//  (3) If exactly one of a,b equals one of c,d, then exactly one of
+	//      VC(a,b,c,d) and VC(c,d,a,b) is true
+	vs := []Point{
+		PointFromCoords(1, 2, 1), PointFromCoords(1, -3, 0.5),
+		PointFromCoords(1, -0.5, -3), PointFromCoords(0.1, 0.5, 3)}
+	//PointFromCoords(1, 2, 1),
+	//PointFromCoords(1, -3, 0.5),
+	//PointFromCoords(1, -0.5, -3),
+	//PointFromCoords(1, 2, 1)}
+	rc := RobustCrossing(vs[0], vs[1], vs[2], vs[3])
+	if rc != 1 {
+		t.Fatalf("robust: %d", rc)
+	}
+	if !EdgeOrVertexCrossing(vs[0], vs[1], vs[2], vs[3]) {
+		t.Fatal("1")
+	}
+}
