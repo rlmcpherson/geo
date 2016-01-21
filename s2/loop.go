@@ -16,7 +16,11 @@ limitations under the License.
 
 package s2
 
-import "github.com/golang/geo/r3"
+import (
+	"log"
+
+	"github.com/golang/geo/r3"
+)
 
 // Loop represents a simple spherical polygon. It consists of a sequence
 // of vertices where the first vertex is implicitly connected to the
@@ -59,6 +63,7 @@ func LoopFromPoints(pts []Point) *Loop {
 		vertices: pts,
 	}
 
+	l.bound = FullRect()
 	l.initOriginAndBound()
 	return l
 }
@@ -87,8 +92,14 @@ func (l *Loop) initOriginAndBound() {
 		// the vertex is in the southern hemisphere or not.
 		l.originInside = l.vertices[0].Z < 0
 	} else {
-		// TODO(roberts): Once ContainsPoint is implemented, add this section.
-		l.originInside = false
+		if !l.bound.ContainsPoint(l.vertices[1]) {
+			panic("bound must contain vertex 1")
+		}
+
+		v1Inside := OrderedCCW(Point{l.vertices[1].Ortho()}, l.vertices[0], l.vertices[2], l.vertices[1])
+		if v1Inside != l.ContainsPoint(l.vertices[1]) {
+			l.originInside = true
+		}
 	}
 
 	// We *must* call initBound() before initIndex(), because initBound() calls
@@ -115,6 +126,13 @@ func (l *Loop) initBound() {
 		l.subregionBound = l.bound
 		return
 	}
+
+	// TODO: check init with 0 vertices
+	bound := EmptyRect()
+	for _, p := range l.vertices {
+		bound = bound.AddPoint(LatLngFromPoint(p))
+	}
+	l.bound, l.subregionBound = bound, bound
 
 	// TODO(roberts): As other s2 pieces get ported, complete this method.
 	return
@@ -153,10 +171,11 @@ func (l Loop) Vertices() []Point {
 
 // ContainsPoint reports whether this loop contains the given point
 func (l Loop) ContainsPoint(p Point) bool {
-	if !l.RectBound().ContainsLatLng(LatLngFromPoint(p)) {
+	log.Printf("bound hi: %#v, lo: %#v", l.RectBound().Hi(), l.RectBound().Lo())
+	if !l.RectBound().ContainsPoint(p) {
 		return false
 	}
-	// TODO: return false if not in loop rect bound
+	log.Println("point in rect")
 	contains := l.originInside
 	v0, origin := l.vertices[0], OriginPoint()
 	for _, v := range l.vertices[1:] {
