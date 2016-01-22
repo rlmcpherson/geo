@@ -202,3 +202,67 @@ func TestVertexCrossing(t *testing.T) {
 		t.Fatal("1")
 	}
 }
+
+func TestRobustCrossing(t *testing.T) {
+	tests := []struct {
+		a, b, c, d Point
+		want       Direction
+	}{
+		{
+			// Two regular edges that cross.
+			PointFromCoords(1, 2, 1),
+			PointFromCoords(1, -3, 0.5),
+			PointFromCoords(1, -0.5, -3),
+			PointFromCoords(0.1, 0.5, 3),
+			CounterClockwise,
+		},
+		{
+			// Two regular edges that cross antipodal points.
+			PointFromCoords(1, 2, 1),
+			PointFromCoords(1, -3, 0.5),
+			PointFromCoords(-1, 0.5, 3),
+			PointFromCoords(-0.1, -0.5, -3),
+			Clockwise,
+		},
+		{
+			// Two edges on the same great circle.
+			PointFromCoords(0, 0, -1),
+			PointFromCoords(0, 1, 0),
+			PointFromCoords(0, 1, 1),
+			PointFromCoords(0, 0, 1),
+			Indeterminate, //TODO(rlmcpherson): Clockwise in C++ code but SimpleCrossing also different. Bug or change in edge case behavior?
+		},
+		{
+			// Two edges that cross where one vertex is the OriginPoint.
+			PointFromCoords(1, 0, 0),
+			OriginPoint(),
+			PointFromCoords(1, -0.1, 1),
+			PointFromCoords(1, 1, -0.1),
+			CounterClockwise,
+		},
+		{
+			// Two edges that cross antipodal points.
+			PointFromCoords(1, 0, 0),
+			PointFromCoords(0, 1, 0),
+			PointFromCoords(0, 0, -1),
+			PointFromCoords(-1, -1, 1),
+			Clockwise,
+		},
+		{
+			// Two edges that share an endpoint.  The Ortho() direction is (-4,0,2),
+			// and edge CD is further CCW around (2,3,4) than AB.
+			PointFromCoords(2, 3, 4),
+			PointFromCoords(-1, 2, 5),
+			PointFromCoords(7, -2, 3),
+			PointFromCoords(2, 3, 4),
+			Indeterminate,
+		},
+	}
+
+	for _, test := range tests {
+		if got := RobustCrossing(test.a, test.b, test.c, test.d); got != test.want {
+			t.Errorf("RobustCrossing(%v,%v,%v,%v) = %t, want %t",
+				test.a, test.b, test.c, test.d, got, test.want)
+		}
+	}
+}

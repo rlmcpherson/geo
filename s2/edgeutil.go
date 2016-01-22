@@ -159,17 +159,17 @@ func VertexCrossing(a, b, c, d Point) bool {
 //  (3) RobustCrossing(a,b,c,d) <= 0 if a==b or c==d
 func RobustCrossing(a, b, c, d Point) Direction {
 	bda := RobustSign(a, b, d)
-	acb := RobustSign(a, b, c)
+	acb := -RobustSign(a, b, c)
 
-	if bda == -acb && bda != 0 { // Most common case -- triangles have opposite orientations.
+	if bda == -acb && bda != Indeterminate { // Most common case -- triangles have opposite orientations.
 		return Clockwise
 	}
-	if bda&acb == 0 { // At least one value is zero -- two vertices are identical.
+	if bda&acb == Indeterminate { // At least one value is zero -- two vertices are identical.
 		return Indeterminate
 	}
 	// ACB and BDA have the appropriate orientations, so now we check the
 	// triangles CBD and DAC.
-	cbd := RobustSign(c, d, b)
+	cbd := -RobustSign(c, d, b)
 	if cbd != acb {
 		return Clockwise
 	}
